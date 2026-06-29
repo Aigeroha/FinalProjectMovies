@@ -2,17 +2,15 @@ package main
 
 import (
 	"log"
-
 	"github.com/gofiber/fiber/v3"
+	"final-project/internal/database"
 )
 
 func main() {
 	
-	app := fiber.New()
+	database.Connect()
 
-	app.Get("/", func(c fiber.Ctx) error {
-		return c.SendString("Fiber v3 успешно запущен!")
-	})
+	app := fiber.New()
 
 	log.Fatal(app.Listen(":8080"))
 }
