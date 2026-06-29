@@ -16,9 +16,8 @@ func NewMovieService() *MovieService {
 	return &MovieService{}
 }
 
-// 1. GetMovies — Получить вообще все фильмы из базы
 func (s *MovieService) GetMovies(ctx context.Context) ([]models.Movie, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
 	defer cancel()
 
 	rows, err := database.DB.QueryContext(ctx, "SELECT movie_id, title, duration, genre, rating FROM movies")
@@ -38,9 +37,8 @@ func (s *MovieService) GetMovies(ctx context.Context) ([]models.Movie, error) {
 	return movies, nil
 }
 
-// 2. GetMovieByID — Найти один конкретный фильм по его ID
 func (s *MovieService) GetMovieByID(ctx context.Context, id int) (*models.Movie, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
 	defer cancel()
 
 	var m models.Movie
@@ -56,9 +54,8 @@ func (s *MovieService) GetMovieByID(ctx context.Context, id int) (*models.Movie,
 	return &m, nil
 }
 
-// 3. CreateMovie — Добавить новый фильм в базу данных
 func (s *MovieService) CreateMovie(ctx context.Context, m *models.Movie) error {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
 	defer cancel()
 
 	query := "INSERT INTO movies (title, duration, genre, rating) VALUES ($1, $2, $3, $4) RETURNING movie_id"
@@ -69,9 +66,8 @@ func (s *MovieService) CreateMovie(ctx context.Context, m *models.Movie) error {
 	return nil
 }
 
-// 4. DeleteMovie — Удалить фильм из кинотеатра по ID
 func (s *MovieService) DeleteMovie(ctx context.Context, id int) error {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
 	defer cancel()
 
 	result, err := database.DB.ExecContext(ctx, "DELETE FROM movies WHERE movie_id = $1", id)
@@ -86,9 +82,8 @@ func (s *MovieService) DeleteMovie(ctx context.Context, id int) error {
 	return nil
 }
 
-// 5. UpdateMovie (PUT) — Полное обновление фильма (перезаписываем все поля)
 func (s *MovieService) UpdateMovie(ctx context.Context, id int, m *models.Movie) error {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
 	defer cancel()
 
 	query := "UPDATE movies SET title = $1, duration = $2, genre = $3, rating = $4 WHERE movie_id = $5"
@@ -105,16 +100,14 @@ func (s *MovieService) UpdateMovie(ctx context.Context, id int, m *models.Movie)
 	return nil
 }
 
-// 6. PatchMovie (PATCH) — Частичное обновление фильма (только то, что прислали)
 func (s *MovieService) PatchMovie(ctx context.Context, id int, existing *models.Movie, input map[string]interface{}) error {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
 	defer cancel()
 
-	// Проверяем, какие поля лежат в map и обновляем только их
 	if val, ok := input["title"].(string); ok {
 		existing.Title = val
 	}
-	if val, ok := input["duration"].(float64); ok { // Числа из JSON в Go прилетают как float64
+	if val, ok := input["duration"].(float64); ok {
 		existing.Duration = int(val)
 	}
 	if val, ok := input["genre"].(string); ok {
@@ -132,9 +125,8 @@ func (s *MovieService) PatchMovie(ctx context.Context, id int, existing *models.
 	return nil
 }
 
-// 7. GetMoviePaginated — Пагинация (по 5 фильмов на одну страницу)
 func (s *MovieService) GetMoviePaginated(ctx context.Context, page int) ([]models.Movie, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
 	defer cancel()
 
 	limit := 5
@@ -158,15 +150,13 @@ func (s *MovieService) GetMoviePaginated(ctx context.Context, page int) ([]model
 	return movies, nil
 }
 
-// 8. GetMoviesFilter — Поиск фильмов по названию, жанру и минимальному рейтингу
 func (s *MovieService) GetMoviesFilter(ctx context.Context, title, genre string, minRating float64) ([]models.Movie, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
 	defer cancel()
 
 	searchTitle := "%" + title + "%"
 	searchGenre := "%" + genre + "%"
 
-	// Используем ILIKE для поиска без учета регистра букв
 	query := "SELECT movie_id, title, duration, genre, rating FROM movies WHERE title ILIKE $1 AND genre ILIKE $2 AND rating >= $3"
 	rows, err := database.DB.QueryContext(ctx, query, searchTitle, searchGenre, minRating)
 	if err != nil {
@@ -185,16 +175,13 @@ func (s *MovieService) GetMoviesFilter(ctx context.Context, title, genre string,
 	return movies, nil
 }
 
-// 9. GetMovieStats — Аналитика (Сложная статистика по фильмам через Горутины и Каналы)
 func (s *MovieService) GetMovieStats(ctx context.Context) (*models.MovieStats, error) {
-	// Для расчета аналитики даем контексту чуть больше времени — 7 секунд
-	ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
+
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	// Используем канал для безопасной передачи данных из горутины
 	statsChan := make(chan *models.MovieStats, 1)
 
-	// Запускаем расчет параллельно в фоновом потоке
 	go func() {
 		var stats models.MovieStats
 		query := `
@@ -220,10 +207,9 @@ func (s *MovieService) GetMovieStats(ctx context.Context) (*models.MovieStats, e
 		statsChan <- &stats
 	}()
 
-	// Конкурентный выбор с помощью оператора select
 	select {
 	case <-ctx.Done():
-		// Если пользователь закрыл страницу или время вышло
+
 		return nil, errs.ErrTimeout
 	case stats := <-statsChan:
 		if stats == nil {

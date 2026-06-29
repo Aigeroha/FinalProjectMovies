@@ -7,11 +7,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gofiber/fiber/v3"
 	"final-project/internal/errs"
 	"final-project/internal/models"
-	"final-project/internal/responses" // Твои функции ответов Success и Error
+	"final-project/internal/responses"
 	"final-project/internal/services"
+
+	"github.com/gofiber/fiber/v3"
 )
 
 type MovieHandler struct {
@@ -22,7 +23,6 @@ func NewMovieHandler(s *services.MovieService) *MovieHandler {
 	return &MovieHandler{service: s}
 }
 
-// 1. GetAllMovies — Чистый хэндлер только для вывода всех фильмов
 func (h *MovieHandler) GetAllMovies(c fiber.Ctx) error {
 	start := time.Now()
 	defer func() {
@@ -43,7 +43,6 @@ func (h *MovieHandler) GetAllMovies(c fiber.Ctx) error {
 	return responses.Success(c, 200, movies)
 }
 
-// 2. GetMoviesFilter — Хэндлер только для фильтрации
 func (h *MovieHandler) GetMoviesFilter(c fiber.Ctx) error {
 	start := time.Now()
 	defer func() {
@@ -77,7 +76,6 @@ func (h *MovieHandler) GetMoviesFilter(c fiber.Ctx) error {
 	return responses.Success(c, 200, movies)
 }
 
-// 3. GetMoviesPaginated — Хэндлер только для пагинации (по 5 фильмов)
 func (h *MovieHandler) GetMoviesPaginated(c fiber.Ctx) error {
 	start := time.Now()
 	defer func() {
@@ -104,7 +102,6 @@ func (h *MovieHandler) GetMoviesPaginated(c fiber.Ctx) error {
 	return responses.Success(c, 200, movies)
 }
 
-// 4. GetMovieByID — Получить один фильм по ID в URL
 func (h *MovieHandler) GetMovieByID(c fiber.Ctx) error {
 	start := time.Now()
 	defer func() {
@@ -133,7 +130,6 @@ func (h *MovieHandler) GetMovieByID(c fiber.Ctx) error {
 	return responses.Success(c, 200, movie)
 }
 
-// 5. CreateMovie — Добавить новый фильм (POST)
 func (h *MovieHandler) CreateMovie(c fiber.Ctx) error {
 	start := time.Now()
 	defer func() {
@@ -159,7 +155,6 @@ func (h *MovieHandler) CreateMovie(c fiber.Ctx) error {
 	return responses.Success(c, 201, movie)
 }
 
-// 6. UpdateMovie — Полное обновление фильма (PUT)
 func (h *MovieHandler) UpdateMovie(c fiber.Ctx) error {
 	start := time.Now()
 	defer func() {
@@ -193,7 +188,6 @@ func (h *MovieHandler) UpdateMovie(c fiber.Ctx) error {
 	return responses.Success(c, 200, movie)
 }
 
-// 7. PatchMovie — Частичное обновление фильма (PATCH)
 func (h *MovieHandler) PatchMovie(c fiber.Ctx) error {
 	start := time.Now()
 	defer func() {
@@ -232,7 +226,6 @@ func (h *MovieHandler) PatchMovie(c fiber.Ctx) error {
 	return responses.Success(c, 200, existing)
 }
 
-// 8. DeleteMovie — Удалить фильм (DELETE)
 func (h *MovieHandler) DeleteMovie(c fiber.Ctx) error {
 	start := time.Now()
 	defer func() {
@@ -261,15 +254,13 @@ func (h *MovieHandler) DeleteMovie(c fiber.Ctx) error {
 	return responses.Success(c, 200, map[string]string{"message": "movie deleted"})
 }
 
-// 9. GetMovieStats — Статистика фильмов с конкурентным таймаутом
 func (h *MovieHandler) GetMovieStats(c fiber.Ctx) error {
 	start := time.Now()
 	defer func() {
 		log.Printf("Запрос GetMovieStats обработан за: %v", time.Since(start))
 	}()
 
-	// Для аналитики даем чуть больше времени — 7 секунд
-	ctx, cancel := context.WithTimeout(context.Background(), 7*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	stats, err := h.service.GetMovieStats(ctx)
