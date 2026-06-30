@@ -11,6 +11,7 @@ func SetupRoutes(app *fiber.App) {
 	api := app.Group("/api/v1")
 
 	MovieRoutes(api)
+	ScheduleRoutes(api)
 
 }
 
@@ -29,4 +30,18 @@ func MovieRoutes(router fiber.Router) {
 	router.Put("/movies/:id", movieHandler.UpdateMovie)     
 	router.Patch("/movies/:id", movieHandler.PatchMovie)   
 	router.Delete("/movies/:id", movieHandler.DeleteMovie)  
+}
+
+func ScheduleRoutes(router fiber.Router) {
+	scheduleRepo := repository.NewScheduleRepository()
+	scheduleService := services.NewScheduleService(scheduleRepo)
+	scheduleHandler := handlers.NewScheduleHandler(scheduleService)
+
+	router.Get("/schedules", scheduleHandler.GetSchedules)           // Полный список ИЛИ фильтры (?time=12:00&hall=1)
+	router.Get("/schedules/page", scheduleHandler.GetSchedulesPaginated) // Пагинация (?page=1)
+	
+	router.Post("/schedules", scheduleHandler.CreateSchedule)        
+	router.Put("/schedules/:id", scheduleHandler.UpdateSchedule)     
+	router.Patch("/schedules/:id", scheduleHandler.PatchSchedule)   
+	router.Delete("/schedules/:id", scheduleHandler.DeleteSchedule)  
 }

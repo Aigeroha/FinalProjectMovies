@@ -5,26 +5,28 @@ import (
 	"time"
 )
 
-// Schedule используется для CREATE, UPDATE, PATCH (работает через ID)
 type Schedule struct {
-	ID        int       `json:"id"`
-	MovieID   int       `json:"movie_id"`
-	HallID    int       `json:"hall_id"`
-	Date      string    `json:"date"` // В Postman: "ДД-ММ-ГГГГ" -> В базе: "ГГГГ-ММ-ДД"
-	Time      string    `json:"time"` // В Postman: "ЧЧ:ММ" -> В базе: "ЧЧ:ММ:00"
-	Price     float64   `json:"price"`
-	CreatedAt time.Time `json:"created_at"`
+	ID           int       `json:"id"`
+	MovieID      int       `json:"movie_id"`
+	HallID       int       `json:"hall_id"`
+	SessionDate  string    `json:"session_date"`
+	SessionTime  string    `json:"session_time"`
+	AdultPrice   float64   `json:"adult_price"`
+	StudentPrice float64   `json:"student_price"`
+	ChildPrice   float64   `json:"child_price"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type ScheduleView struct {
-	ID         int     `json:"schedule_id"`
-	MovieTitle string  `json:"movie_title"`
-	HallName   string  `json:"hall_name"`
-	Date       string  `json:"date"` // Будет выводиться как "ДД-ММ-ГГГГ"
-	Time       string  `json:"time"` // Будет выводиться как "ЧЧ:ММ"
-	Price      float64 `json:"price"`
+	ID           int     `json:"schedule_id"`
+	MovieTitle   string  `json:"movie_title"`
+	SessionDate  string  `json:"session_date"`
+	SessionTime  string  `json:"session_time"`
+	HallID       int     `json:"hall_id"`
+	AdultPrice   float64 `json:"adult_price"`
+	StudentPrice float64 `json:"student_price"`
+	ChildPrice   float64 `json:"child_price"`
 }
-
 
 func (s *Schedule) UnmarshalJSON(data []byte) error {
 	type Alias Schedule
@@ -32,45 +34,44 @@ func (s *Schedule) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
-	if s.Date != "" {
-		t, err := time.Parse("02-01-2006", s.Date)
+	if s.SessionDate != "" {
+		t, err := time.Parse("02-01-2006", s.SessionDate)
 		if err == nil {
-			s.Date = t.Format("2006-01-02")
+			s.SessionDate = t.Format("2006-01-02")
 		}
 	}
-	if s.Time != "" && len(s.Time) == 5 {
-		s.Time = s.Time + ":00"
+	if s.SessionTime != "" && len(s.SessionTime) == 5 {
+		s.SessionTime = s.SessionTime + ":00"
 	}
 	return nil
 }
-
 
 func (s *Schedule) MarshalJSON() ([]byte, error) {
 	type Alias Schedule
 	return json.Marshal(&struct {
 		*Alias
-		Date string `json:"date"`
-		Time string `json:"time"`
+		SessionDate string `json:"session_date"`
+		SessionTime string `json:"session_time"`
 	}{
-		Alias: (*Alias)(s),
-		Date:  formatToDisplayDate(s.Date),
-		Time:  formatToDisplayTime(s.Time),
+		Alias:       (*Alias)(s),
+		SessionDate: formatToDisplayDate(s.SessionDate),
+		SessionTime: formatToDisplayTime(s.SessionTime),
 	})
 }
 
+// MarshalJSON для красивого вывода во Вьюшке
 func (sv *ScheduleView) MarshalJSON() ([]byte, error) {
 	type Alias ScheduleView
 	return json.Marshal(&struct {
 		*Alias
-		Date string `json:"date"`
-		Time string `json:"time"`
+		SessionDate string `json:"session_date"`
+		SessionTime string `json:"session_time"`
 	}{
-		Alias: (*Alias)(sv),
-		Date:  formatToDisplayDate(sv.Date),
-		Time:  formatToDisplayTime(sv.Time),
+		Alias:       (*Alias)(sv),
+		SessionDate: formatToDisplayDate(sv.SessionDate),
+		SessionTime: formatToDisplayTime(sv.SessionTime),
 	})
 }
-
 
 func formatToDisplayDate(dbDate string) string {
 	t, err := time.Parse("2006-01-02", dbDate)
