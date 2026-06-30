@@ -26,7 +26,7 @@ func NewMovieHandler(s *services.MovieService) *MovieHandler {
 func (h *MovieHandler) GetAllMovies(c fiber.Ctx) error {
 	start := time.Now()
 	defer func() {
-		log.Printf("Запрос GetMovies обработан за: %v", time.Since(start))
+		log.Printf("Запрос GetAllMovies обработан за: %v", time.Since(start))
 	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -260,7 +260,7 @@ func (h *MovieHandler) GetMovieStats(c fiber.Ctx) error {
 		log.Printf("Запрос GetMovieStats обработан за: %v", time.Since(start))
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 7*time.Second)
 	defer cancel()
 
 	stats, err := h.service.GetMovieStats(ctx)
