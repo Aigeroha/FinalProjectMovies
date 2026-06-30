@@ -18,7 +18,7 @@ func NewCustomerRepository() *CustomerRepository {
 	return &CustomerRepository{db: database.DB}
 }
 
-// 1. ТРАНЗАКЦИЯ: Создание клиента + Автосоздание пустого кошелька
+
 func (r *CustomerRepository) CreateWithWalletTx(ctx context.Context, c *models.Customer) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -26,14 +26,14 @@ func (r *CustomerRepository) CreateWithWalletTx(ctx context.Context, c *models.C
 	}
 	defer tx.Rollback()
 
-	// Шаг А: Создаем клиента
+	
 	customerQuery := `INSERT INTO customers (nickname, password_hash, phone) VALUES ($1, $2, $3) RETURNING customer_id`
 	err = tx.QueryRowContext(ctx, customerQuery, c.Nickname, c.PasswordHash, c.Phone).Scan(&c.ID)
 	if err != nil {
-		return err // Если никнейм уже занят, база вернет ошибку дубликата UNIQUE
+		return err 
 	}
 
-	// Шаг Б: Автоматически создаем ему кошелек с балансом 0
+	
 	walletQuery := `INSERT INTO customer_wallet (customer_id, balance) VALUES ($1, 0)`
 	_, err = tx.ExecContext(ctx, walletQuery, c.ID)
 	if err != nil {
@@ -43,7 +43,7 @@ func (r *CustomerRepository) CreateWithWalletTx(ctx context.Context, c *models.C
 	return tx.Commit()
 }
 
-// 2. Получение клиента по никнейму (нужно для авторизации Login)
+
 func (r *CustomerRepository) GetByNickname(ctx context.Context, nickname string) (*models.Customer, error) {
 	var c models.Customer
 	query := `SELECT customer_id, nickname, password_hash, phone FROM customers WHERE nickname = $1`
@@ -54,7 +54,7 @@ func (r *CustomerRepository) GetByNickname(ctx context.Context, nickname string)
 	return &c, nil
 }
 
-// 3. Получение профиля по ID вместе с балансом кошелька через JOIN
+
 func (r *CustomerRepository) GetProfileByID(ctx context.Context, id int) (*models.CustomerProfileResponse, error) {
 	var p models.CustomerProfileResponse
 	query := `
@@ -70,7 +70,7 @@ func (r *CustomerRepository) GetProfileByID(ctx context.Context, id int) (*model
 	return &p, err
 }
 
-// 4. Пополнение кошелька (приход денег)
+
 func (r *CustomerRepository) AddMoney(ctx context.Context, customerID int, amount int) (int64, error) {
 	query := `UPDATE customer_wallet SET balance = balance + $1 WHERE customer_id = $2`
 	res, err := r.db.ExecContext(ctx, query, amount, customerID)
@@ -80,7 +80,7 @@ func (r *CustomerRepository) AddMoney(ctx context.Context, customerID int, amoun
 	return res.RowsAffected()
 }
 
-// 5. Динамический PATCH для обновления любых полей (телефон, никнейм, хэш пароля)
+
 func (r *CustomerRepository) UpdateFields(ctx context.Context, id int, fields map[string]interface{}) (int64, error) {
 	if len(fields) == 0 {
 		return 0, nil
@@ -95,7 +95,7 @@ func (r *CustomerRepository) UpdateFields(ctx context.Context, id int, fields ma
 		args = append(args, val)
 		idx++
 	}
-	query = query[:len(query)-2] // Отрезаем лишнюю запятую
+	query = query[:len(query)-2] 
 	query += " WHERE customer_id = $" + strconv.Itoa(idx)
 	args = append(args, id)
 
