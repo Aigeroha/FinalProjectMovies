@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"final-project/internal/errs"
