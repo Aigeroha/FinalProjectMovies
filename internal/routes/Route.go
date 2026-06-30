@@ -1,10 +1,12 @@
 package routes
 
 import (
-	"github.com/gofiber/fiber/v3"
 	"final-project/internal/handlers"
-	"final-project/internal/repository" 
-	"final-project/internal/services"  
+	"final-project/internal/middleware"
+	"final-project/internal/repository"
+	"final-project/internal/services"
+
+	"github.com/gofiber/fiber/v3"
 )
 
 func SetupRoutes(app *fiber.App) {
@@ -12,24 +14,25 @@ func SetupRoutes(app *fiber.App) {
 
 	MovieRoutes(api)
 	ScheduleRoutes(api)
-
+	TicketRoutes(api)
+	CustomerRoutes(api)
 }
 
 func MovieRoutes(router fiber.Router) {
-	movieRepo := repository.NewMovieRepository()          
-	movieService := services.NewMovieService(movieRepo)   
+	movieRepo := repository.NewMovieRepository()
+	movieService := services.NewMovieService(movieRepo)
 	movieHandler := handlers.NewMovieHandler(movieService)
 
-	router.Get("/movies", movieHandler.GetAllMovies)            
-	router.Get("/movies/search", movieHandler.GetMoviesFilter)   
-	router.Get("/movies/page", movieHandler.GetMoviesPaginated)  
-	router.Get("/movies/stats", movieHandler.GetMovieStats)     
-	
-	router.Get("/movies/:id", movieHandler.GetMovieByID)    
-	router.Post("/movies", movieHandler.CreateMovie)        
-	router.Put("/movies/:id", movieHandler.UpdateMovie)     
-	router.Patch("/movies/:id", movieHandler.PatchMovie)   
-	router.Delete("/movies/:id", movieHandler.DeleteMovie)  
+	router.Get("/movies", movieHandler.GetAllMovies)
+	router.Get("/movies/search", movieHandler.GetMoviesFilter)
+	router.Get("/movies/page", movieHandler.GetMoviesPaginated)
+	router.Get("/movies/stats", movieHandler.GetMovieStats)
+
+	router.Get("/movies/:id", movieHandler.GetMovieByID)
+	router.Post("/movies", movieHandler.CreateMovie)
+	router.Put("/movies/:id", movieHandler.UpdateMovie)
+	router.Patch("/movies/:id", movieHandler.PatchMovie)
+	router.Delete("/movies/:id", movieHandler.DeleteMovie)
 }
 
 func ScheduleRoutes(router fiber.Router) {
@@ -37,11 +40,42 @@ func ScheduleRoutes(router fiber.Router) {
 	scheduleService := services.NewScheduleService(scheduleRepo)
 	scheduleHandler := handlers.NewScheduleHandler(scheduleService)
 
-	router.Get("/schedules", scheduleHandler.GetSchedules)           // Полный список ИЛИ фильтры (?time=12:00&hall=1)
-	router.Get("/schedules/page", scheduleHandler.GetSchedulesPaginated) // Пагинация (?page=1)
-	
-	router.Post("/schedules", scheduleHandler.CreateSchedule)        
-	router.Put("/schedules/:id", scheduleHandler.UpdateSchedule)     
-	router.Patch("/schedules/:id", scheduleHandler.PatchSchedule)   
-	router.Delete("/schedules/:id", scheduleHandler.DeleteSchedule)  
+	router.Get("/schedules", scheduleHandler.GetSchedules)
+	router.Get("/schedules/page", scheduleHandler.GetSchedulesPaginated)
+
+	router.Post("/schedules", scheduleHandler.CreateSchedule)
+	router.Put("/schedules/:id", scheduleHandler.UpdateSchedule)
+	router.Patch("/schedules/:id", scheduleHandler.PatchSchedule)
+	router.Delete("/schedules/:id", scheduleHandler.DeleteSchedule)
+}
+
+// Новая функция для Билетов
+func TicketRoutes(router fiber.Router) {
+	ticketRepo := repository.NewTicketRepository()
+	scheduleRepo := repository.NewScheduleRepository()
+	ticketService := services.NewTicketService(ticketRepo, scheduleRepo)
+	ticketHandler := handlers.NewTicketHandler(ticketService)
+
+	router.Get("/tickets", ticketHandler.GetTickets)
+
+	protected := router.Group("", middleware.Protected())
+	protected.Post("/tickets", ticketHandler.BuyTicket)
+	protected.Post("/tickets/refund", ticketHandler.RefundTicket)
+}
+
+// Новая функция для Клиентов и Кошельков
+func CustomerRoutes(router fiber.Router) {
+	customerRepo := repository.NewCustomerRepository()
+	customerService := services.NewCustomerService(customerRepo)
+	customerHandler := handlers.NewCustomerHandler(customerService)
+
+	router.Post("/customers/register", customerHandler.Register)
+	router.Post("/customers/login", customerHandler.Login)
+
+	protected := router.Group("", middleware.Protected())
+	protected.Get("/customers", customerHandler.GetAllCustomers)
+	protected.Get("/customers/:id", customerHandler.GetProfile)
+	protected.Patch("/customers/:id", customerHandler.PatchCustomer)
+	protected.Post("/customers/:id/topup", customerHandler.TopUpWallet)
+	protected.Delete("/customers/:id", customerHandler.DeleteCustomer)
 }
