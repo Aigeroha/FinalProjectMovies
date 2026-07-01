@@ -32,20 +32,26 @@ func SetupRoutes(app *fiber.App) {
 }
 
 func MovieRoutes(router fiber.Router) {
-	movieRepo := repository.NewMovieRepository()
-	movieService := services.NewMovieService(movieRepo)
-	movieHandler := handlers.NewMovieHandler(movieService)
+    movieRepo := repository.NewMovieRepository()
+    movieService := services.NewMovieService(movieRepo)
+    movieHandler := handlers.NewMovieHandler(movieService)
 
-	router.Get("/movies", movieHandler.GetAllMovies)
-	router.Get("/movies/search", movieHandler.GetMoviesFilter)
-	router.Get("/movies/page", movieHandler.GetMoviesPaginated)
-	router.Get("/movies/stats", movieHandler.GetMovieStats)
+    // --- ПУБЛИЧНЫЕ (доступны всем без токена и ключа) ---
+    router.Get("/movies", movieHandler.GetAllMovies)
+    router.Get("/movies/search", movieHandler.GetMoviesFilter)
+    router.Get("/movies/page", movieHandler.GetMoviesPaginated)
+    router.Get("/movies/stats", movieHandler.GetMovieStats)
+    router.Get("/movies/:id", movieHandler.GetMovieByID)
 
-	router.Get("/movies/:id", movieHandler.GetMovieByID)
-	router.Post("/movies", movieHandler.CreateMovie)
-	router.Put("/movies/:id", movieHandler.UpdateMovie)
-	router.Patch("/movies/:id", movieHandler.PatchMovie)
-	router.Delete("/movies/:id", movieHandler.DeleteMovie)
+    // --- АДМИНСКИЕ (только с секретным ключом) ---
+    // Используем middleware.AdminOnly(), который мы создадим ниже
+    admin := router.Group("/movies")
+    admin.Use(middleware.AdminOnly()) 
+
+    admin.Post("/", movieHandler.CreateMovie)
+    admin.Put("/:id", movieHandler.UpdateMovie)
+    admin.Patch("/:id", movieHandler.PatchMovie)
+    admin.Delete("/:id", movieHandler.DeleteMovie)
 }
 
 func ScheduleRoutes(router fiber.Router) {
@@ -83,10 +89,12 @@ func CustomerRoutes(router fiber.Router) {
 	router.Post("/customers/register", customerHandler.Register)
 	router.Post("/customers/login", customerHandler.Login)
 
-	protected := router.Group("", middleware.Protected())
-	protected.Get("/customers", customerHandler.GetAllCustomers)
-	protected.Get("/customers/:id", customerHandler.GetProfile)
-	protected.Patch("/customers/:id", customerHandler.PatchCustomer)
-	protected.Post("/customers/:id/topup", customerHandler.TopUpWallet)
-	protected.Delete("/customers/:id", customerHandler.DeleteCustomer)
+	protected := router.Group("/customers")
+	protected.Use(middleware.Protected())
+
+	protected.Get("/", customerHandler.GetAllCustomers)
+	protected.Get("/:id", customerHandler.GetProfile)
+	protected.Patch("/:id", customerHandler.PatchCustomer)
+	protected.Post("/:id/topup", customerHandler.TopUpWallet)
+	protected.Delete("/:id", customerHandler.DeleteCustomer)
 }
