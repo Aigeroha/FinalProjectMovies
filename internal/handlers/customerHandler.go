@@ -8,7 +8,7 @@ import (
 	"final-project/internal/models"
 	"final-project/internal/responses"
 	"final-project/internal/services"
-
+	"final-project/internal/auth"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -53,7 +53,15 @@ func (h *CustomerHandler) Login(c fiber.Ctx) error {
 	}
 
 	
-	return responses.Success(c, 200, customer)
+	token, err := auth.GenerateToken(customer.ID)
+	if err != nil {
+		return responses.Error(c, 500, "could not generate token")
+	}
+
+	
+	return responses.Success(c, 200, map[string]string{
+		"token": token,
+	})
 }
 
 

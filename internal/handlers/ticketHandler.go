@@ -29,6 +29,13 @@ func (h *TicketHandler) BuyTicket(c fiber.Ctx) error {
 		return responses.Error(c, 400, "bad request")
 	}
 
+	
+	customerID, ok := c.Locals("customer_id").(int)
+	if !ok {
+		return responses.Error(c, 401, "unauthorized")
+	}
+	t.CustomerID = customerID 
+
 	if err := h.service.CreateTicket(ctx, &t); err != nil {
 		return responses.Error(c, 400, err.Error())
 	}
@@ -41,16 +48,20 @@ func (h *TicketHandler) RefundTicket(c fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	
 	var input struct {
-		TicketID   int `json:"ticket_id"`
-		CustomerID int `json:"customer_id"`
+		TicketID int `json:"ticket_id"`
 	}
 	if err := c.Bind().Body(&input); err != nil {
 		return responses.Error(c, 400, "bad request")
 	}
 
-	if err := h.service.RefundTicket(ctx, input.TicketID, input.CustomerID); err != nil {
+	
+	customerID, ok := c.Locals("customer_id").(int)
+	if !ok {
+		return responses.Error(c, 401, "unauthorized")
+	}
+
+	if err := h.service.RefundTicket(ctx, input.TicketID, customerID); err != nil {
 		return responses.Error(c, 400, err.Error())
 	}
 
