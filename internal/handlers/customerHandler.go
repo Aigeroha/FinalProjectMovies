@@ -53,14 +53,21 @@ func (h *CustomerHandler) Login(c fiber.Ctx) error {
 	}
 
 	
-	token, err := auth.GenerateToken(customer.ID)
+	accessToken, err := auth.GenerateAccessToken(customer.ID)
 	if err != nil {
-		return responses.Error(c, 500, "could not generate token")
+		return responses.Error(c, 500, "internal error")
+	}
+
+	
+	refreshToken, err := auth.GenerateRefreshToken(ctx, customer.ID)
+	if err != nil {
+		return responses.Error(c, 500, "internal error")
 	}
 
 	
 	return responses.Success(c, 200, map[string]string{
-		"token": token,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
 	})
 }
 
