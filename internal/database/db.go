@@ -16,9 +16,8 @@ var (
 	once sync.Once
 )
 
-func Connect() {
+func Connect(dsn string) {
 	once.Do(func() {
-		dsn := "host=localhost port=5432 user=postgres password=12345 dbname=movie sslmode=disable"
 
 		var err error
 		DB, err = sql.Open("postgres", dsn)
@@ -47,77 +46,93 @@ func Connect() {
 func runMigrations() {
 	query := `
 
-	CREATE TABLE IF NOT EXISTS movies (
-		id SERIAL PRIMARY KEY,
-		title VARCHAR(255) NOT NULL,
-		genre VARCHAR(100) NOT NULL,
-		duration INT NOT NULL,
-		rating NUMERIC(3, 1) NOT NULL,
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-	);
-
-	
 	CREATE TABLE IF NOT EXISTS customers (
-		id SERIAL PRIMARY KEY,
-		name VARCHAR(255) NOT NULL,
-		email VARCHAR(255) UNIQUE NOT NULL,
-		phone VARCHAR(50),
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		customer_id SERIAL PRIMARY KEY,
+		nickname VARCHAR(100) UNIQUE,
+		password_hash VARCHAR(255),
+		phone VARCHAR(25)
 	);
 
-	
-	CREATE TABLE IF NOT EXISTS customer_wallets (
-		id SERIAL PRIMARY KEY,
-		customer_id INT UNIQUE NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-		balance NUMERIC(10, 2) DEFAULT 0.00,
-		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	CREATE TABLE IF NOT EXISTS movies (
+		movie_id SERIAL PRIMARY KEY,
+		title VARCHAR(100),
+		duration INT,
+		genre VARCHAR(50),
+		rating DECIMAL(2,1)
 	);
 
-	
 	CREATE TABLE IF NOT EXISTS halls (
-		id SERIAL PRIMARY KEY,
-		name VARCHAR(100) NOT NULL,
-		total_seats INT NOT NULL
+		hall_id SERIAL PRIMARY KEY,
+		hall_number INT UNIQUE,
+		capacity INT
 	);
 
-	
 	CREATE TABLE IF NOT EXISTS seats (
-		id SERIAL PRIMARY KEY,
-		hall_id INT NOT NULL REFERENCES halls(id) ON DELETE CASCADE,
-		row_num INT NOT NULL,
-		seat_num INT NOT NULL,
-		UNIQUE(hall_id, row_num, seat_num)
+		seat_id SERIAL PRIMARY KEY,
+		hall_id INT REFERENCES halls(hall_id) ON DELETE CASCADE,
+		row_number INT CHECK (row_number BETWEEN 1 AND 3),
+		seat_number INT CHECK (seat_number BETWEEN 1 AND 10)
+	);
+
+	CREATE TABLE IF NOT EXISTS customer_wallet (
+		account_id SERIAL PRIMARY KEY,
+		customer_id INT UNIQUE REFERENCES customers(customer_id) ON DELETE CASCADE,
+		balance INT CHECK (balance >= 0)
 	);
 
 	CREATE TABLE IF NOT EXISTS schedules (
-		id SERIAL PRIMARY KEY,
-		movie_id INT NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
-		hall_id INT REFERENCES halls(id) ON DELETE SET NULL,
-		date_time TIMESTAMP NOT NULL,
-		price NUMERIC(10, 2) NOT NULL,
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		schedule_id SERIAL PRIMARY KEY,
+		movie_id INT REFERENCES movies(movie_id) ON DELETE CASCADE,
+		session_date DATE,
+		session_time TIME,
+		hall_id INT REFERENCES halls(hall_id) ON DELETE SET NULL,
+		adult_price INT,
+		student_price INT,
+		child_price INT
 	);
 
 	CREATE TABLE IF NOT EXISTS tickets (
-		id SERIAL PRIMARY KEY,
-		schedule_id INT NOT NULL REFERENCES schedules(id) ON DELETE CASCADE,
-		customer_id INT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-		seat_id INT NOT NULL REFERENCES seats(id) ON DELETE CASCADE,
-		status VARCHAR(50) DEFAULT 'booked', -- booked, paid, cancelled
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		UNIQUE(schedule_id, seat_id) -- Чтобы одно сиденье на сеанс нельзя было купить дважды
+		ticket_id SERIAL PRIMARY KEY,
+		schedule_id INT REFERENCES schedules(schedule_id) ON DELETE CASCADE,
+		seat_id INT REFERENCES seats(seat_id) ON DELETE CASCADE,
+		customer_id INT REFERENCES customers(customer_id) ON DELETE CASCADE,
+		ticket_type VARCHAR(20) NOT NULL CHECK (ticket_type IN ('Взрослый', 'Студенческий', 'Детский')),
+		status VARCHAR(20) NOT NULL CHECK (status IN ('Куплено', 'Отмена'))
 	);
 
 	CREATE TABLE IF NOT EXISTS refunds (
-		id SERIAL PRIMARY KEY,
-		ticket_id INT UNIQUE NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
-		amount NUMERIC(10, 2) NOT NULL,
-		refunded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-	);`
+		refund_id SERIAL PRIMARY KEY,
+		ticket_id INT UNIQUE REFERENCES tickets(ticket_id) ON DELETE CASCADE,
+		refund_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		amount DECIMAL(10,2)
+	);
+
+	
+	CREATE OR REPLACE VIEW view_customer_wallets_readable AS
+	SELECT 
+		w.account_id,
+		c.nickname AS customer_nickname,
+		w.balance
+	FROM customer_wallet w
+	JOIN customers c ON w.customer_id = c.customer_id;
+
+	CREATE OR REPLACE VIEW view_readable_schedules AS
+	SELECT 
+		s.schedule_id,
+		m.title AS movie_title, 
+		s.session_date,
+		s.session_time,
+		s.hall_id,
+		s.adult_price,
+		s.student_price,
+		s.child_price
+	FROM schedules s
+	JOIN movies m ON s.movie_id = m.movie_id;
+	`
 
 	_, err := DB.Exec(query)
 	if err != nil {
-		log.Fatalf("Ошибка при выполнении миграции всех таблиц: %v", err)
+		log.Fatalf("Ошибка при выполнении миграции всех таблиц и view: %v", err)
 	}
-	log.Println("Миграции базы данных успешно применены! Все таблицы кинотеатра (включая залы, кошельки и возвраты) готовы к работе.")
+	log.Println("Миграции базы данных успешно применены! Все таблицы и view кинотеатраготовы к работе.")
 }
