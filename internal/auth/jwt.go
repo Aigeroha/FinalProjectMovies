@@ -3,16 +3,21 @@ package auth
 import (
 	"errors"
 	"time"
-
+	"final-project/internal/config" 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte("my_super_secret_cinema_key_2026")
 
 type Claims struct {
 	CustomerID int `json:"customer_id"`
 	jwt.RegisteredClaims
 }
+
+
+func getSecret() []byte {
+	return []byte(config.AppConfig.JWTSecret)
+}
+
 
 func GenerateToken(customerID int) (string, error) {
 	claims := Claims{
@@ -24,12 +29,13 @@ func GenerateToken(customerID int) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token.SignedString(getSecret())
 }
+
 
 func ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return jwtSecret, nil
+		return getSecret(), nil
 	})
 
 	if err != nil {
