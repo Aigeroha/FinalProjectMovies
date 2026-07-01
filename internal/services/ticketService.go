@@ -11,7 +11,7 @@ import (
 
 type TicketService struct {
 	repo         *repository.TicketRepository
-	scheduleRepo *repository.ScheduleRepository // Нужен для проверки цен и времени сеанса
+	scheduleRepo *repository.ScheduleRepository 
 }
 
 func NewTicketService(r *repository.TicketRepository, s *repository.ScheduleRepository) *TicketService {

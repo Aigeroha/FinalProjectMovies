@@ -14,14 +14,14 @@ type MovieStats struct {
 	Rating      RatingStats   `json:"rating"`
 }
 
-// DurationStats описывает статистику по длительности фильмов
+
 type DurationStats struct {
 	Average float64 `json:"average"`
 	Max     int     `json:"max"`
 	Min     int     `json:"min"`
 }
 
-// RatingStats описывает статистику по рейтингам фильмов
+
 type RatingStats struct {
 	Average float64 `json:"average"`
 	Max     float64 `json:"max"`

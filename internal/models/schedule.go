@@ -59,7 +59,7 @@ func (s *Schedule) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// MarshalJSON для красивого вывода во Вьюшке
+
 func (sv *ScheduleView) MarshalJSON() ([]byte, error) {
 	type Alias ScheduleView
 	return json.Marshal(&struct {
