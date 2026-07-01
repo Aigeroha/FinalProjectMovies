@@ -5,7 +5,6 @@ import (
 	"final-project/internal/middleware"
 	"final-project/internal/repository"
 	"final-project/internal/services"
-
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v3"
 )
@@ -28,6 +27,7 @@ func SetupRoutes(app *fiber.App) {
 	app.Get("/ws/halls", websocket.New(func(c *websocket.Conn) {
 		_ = handlers.HandlerWebSocket(c)
 	}))
+
 }
 
 func MovieRoutes(router fiber.Router) {
