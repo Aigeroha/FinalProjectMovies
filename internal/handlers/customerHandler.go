@@ -10,6 +10,7 @@ import (
 	"final-project/internal/services"
 	"final-project/internal/auth"
 	"github.com/gofiber/fiber/v3"
+	"final-project/internal/logger"
 )
 
 type CustomerHandler struct {
@@ -31,9 +32,10 @@ func (h *CustomerHandler) Register(c fiber.Ctx) error {
 	}
 
 	if err := h.service.Register(ctx, input); err != nil {
+		logger.Log.Warn("Ошибка регистрации пользователя", "nickname", input.Nickname, "err", err.Error())
 		return responses.Error(c, 400, err.Error())
 	}
-
+	logger.Log.Info("Создан новый аккаунт клиента", "nickname", input.Nickname)
 	return responses.Success(c, 201, map[string]string{"message": "регистрация успешна"})
 }
 
@@ -49,6 +51,7 @@ func (h *CustomerHandler) Login(c fiber.Ctx) error {
 
 	customer, err := h.service.Login(ctx, input)
 	if err != nil {
+		logger.Log.Warn("Неудачная попытка входа", "nickname", input.Nickname, "err", err.Error())
 		return responses.Error(c, 401, err.Error())
 	}
 
@@ -64,6 +67,7 @@ func (h *CustomerHandler) Login(c fiber.Ctx) error {
 		return responses.Error(c, 500, "internal error")
 	}
 
+	logger.Log.Info("Пользователь успешно вошел в систему", "customer_id", customer.ID)
 	
 	return responses.Success(c, 200, map[string]string{
 		"access_token":  accessToken,
@@ -108,6 +112,7 @@ func (h *CustomerHandler) PatchCustomer(c fiber.Ctx) error {
 		return responses.Error(c, 400, err.Error())
 	}
 
+	logger.Log.Info("Данные профиля обновлены", "customer_id", id)
 	return responses.Success(c, 200, map[string]string{"message": "данные обновлены"})
 }
 
@@ -132,6 +137,7 @@ func (h *CustomerHandler) TopUpWallet(c fiber.Ctx) error {
 		return responses.Error(c, 400, err.Error())
 	}
 
+	logger.Log.Info("Пополнение баланса кошелька", "customer_id", id, "amount", input.Amount)
 	return responses.Success(c, 200, map[string]string{"message": "кошелек успешно пополнен"})
 }
 
@@ -149,6 +155,7 @@ func (h *CustomerHandler) DeleteCustomer(c fiber.Ctx) error {
 		return responses.Error(c, 400, err.Error())
 	}
 
+	logger.Log.Info("Аккаунт пользователя полностью удален", "customer_id", id)
 	return responses.Success(c, 200, map[string]string{"message": "аккаунт и кошелек успешно удалены"})
 }
 

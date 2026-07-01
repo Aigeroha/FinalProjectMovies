@@ -6,10 +6,14 @@ import (
 	"final-project/internal/database"
 	"final-project/internal/routes"
 	"final-project/internal/config"
+	"final-project/internal/logger"
 )
 
 func main() {
 
+	logger.InitLogger()
+	logger.Log.Info("Сервер кинотеатра запускается...")
+	
 	config.LoadConfig()
 	
 	database.Connect(config.AppConfig.DBConnStr)
