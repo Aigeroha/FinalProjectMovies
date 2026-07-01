@@ -14,8 +14,8 @@ func SetupRoutes(app *fiber.App) {
 
 	MovieRoutes(api)
 	ScheduleRoutes(api)
-	TicketRoutes(api)   // Подключаем билеты
-	CustomerRoutes(api) // Подключаем клиентов
+	TicketRoutes(api)   
+	CustomerRoutes(api) 
 }
 
 func MovieRoutes(router fiber.Router) {
@@ -49,17 +49,17 @@ func ScheduleRoutes(router fiber.Router) {
 	router.Delete("/schedules/:id", scheduleHandler.DeleteSchedule)
 }
 
-// Новая функция для Билетов
+
 func TicketRoutes(router fiber.Router) {
 	ticketRepo := repository.NewTicketRepository()
-	scheduleRepo := repository.NewScheduleRepository() // Нужен сервису билетов для проверки сеансов
+	scheduleRepo := repository.NewScheduleRepository() 
 	ticketService := services.NewTicketService(ticketRepo, scheduleRepo)
 	ticketHandler := handlers.NewTicketHandler(ticketService)
 
-	// Публичный роут (просмотр билетов с мега-фильтрацией по фильмам, залам и т.д.)
+	
 	router.Get("/tickets", ticketHandler.GetTickets)
 
-	// Создаем изолированную группу, внутри которой ВСЕ роуты защищены JWT-токеном
+	
 	protected := router.Group("", middleware.Protected())
 	protected.Post("/tickets", ticketHandler.BuyTicket) 
 	protected.Post("/tickets/refund", ticketHandler.RefundTicket)
