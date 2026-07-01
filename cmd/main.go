@@ -13,6 +13,7 @@ func main() {
 	config.LoadConfig()
 	
 	database.Connect(config.AppConfig.DBConnStr)
+	database.ConnectRedis(config.AppConfig.RedisAddr)
 
 	app := fiber.New()
 
