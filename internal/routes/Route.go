@@ -5,6 +5,7 @@ import (
 	"final-project/internal/middleware"
 	"final-project/internal/repository"
 	"final-project/internal/services"
+	"github.com/gofiber/contrib/websocket"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -16,6 +17,16 @@ func SetupRoutes(app *fiber.App) {
 	ScheduleRoutes(api)
 	TicketRoutes(api)   
 	CustomerRoutes(api) 
+
+	app.Use("/ws", func(c fiber.Ctx) error {
+		if c.Get("Upgrade") == "websocket" {
+			return c.Next()
+		}
+		return fiber.ErrUpgradeRequired
+	})
+
+	
+	app.Get("/ws/halls", websocket.New(handlers.HandleWebSocket))
 }
 
 func MovieRoutes(router fiber.Router) {
