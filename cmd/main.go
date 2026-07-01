@@ -13,7 +13,6 @@ func main() {
 
 	logger.InitLogger()
 	logger.Log.Info("Сервер кинотеатра запускается...")
-	
 	config.LoadConfig()
 	
 	database.Connect(config.AppConfig.DBConnStr)

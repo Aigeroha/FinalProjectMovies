@@ -5,8 +5,8 @@ import (
 	"final-project/internal/middleware"
 	"final-project/internal/repository"
 	"final-project/internal/services"
-	"github.com/gofiber/contrib/websocket"
 
+	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -15,8 +15,8 @@ func SetupRoutes(app *fiber.App) {
 
 	MovieRoutes(api)
 	ScheduleRoutes(api)
-	TicketRoutes(api)   
-	CustomerRoutes(api) 
+	TicketRoutes(api)
+	CustomerRoutes(api)
 
 	app.Use("/ws", func(c fiber.Ctx) error {
 		if c.Get("Upgrade") == "websocket" {
@@ -25,8 +25,9 @@ func SetupRoutes(app *fiber.App) {
 		return fiber.ErrUpgradeRequired
 	})
 
-	
-	app.Get("/ws/halls", websocket.New(handlers.HandleWebSocket))
+	app.Get("/ws/halls", websocket.New(func(c *websocket.Conn) {
+		_ = handlers.HandlerWebSocket(c)
+	}))
 }
 
 func MovieRoutes(router fiber.Router) {
@@ -60,19 +61,16 @@ func ScheduleRoutes(router fiber.Router) {
 	router.Delete("/schedules/:id", scheduleHandler.DeleteSchedule)
 }
 
-
 func TicketRoutes(router fiber.Router) {
 	ticketRepo := repository.NewTicketRepository()
-	scheduleRepo := repository.NewScheduleRepository() 
+	scheduleRepo := repository.NewScheduleRepository()
 	ticketService := services.NewTicketService(ticketRepo, scheduleRepo)
 	ticketHandler := handlers.NewTicketHandler(ticketService)
 
-	
 	router.Get("/tickets", ticketHandler.GetTickets)
 
-	
 	protected := router.Group("", middleware.Protected())
-	protected.Post("/tickets", ticketHandler.BuyTicket) 
+	protected.Post("/tickets", ticketHandler.BuyTicket)
 	protected.Post("/tickets/refund", ticketHandler.RefundTicket)
 }
 

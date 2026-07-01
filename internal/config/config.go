@@ -14,7 +14,7 @@ type Config struct {
 	RedisAddr  string
 }
 
-var AppConfig *Config
+var AppConfig Config
 
 func LoadConfig() {
 
@@ -30,7 +30,7 @@ func LoadConfig() {
 		" dbname=" + os.Getenv("DB_NAME") +
 		" sslmode=disable"
 
-	AppConfig = &Config{
+	AppConfig = Config{
 		ServerPort: os.Getenv("SERVER_PORT"),
 		DBConnStr:  dbConnStr,
 		JWTSecret:  os.Getenv("JWT_SECRET"),
