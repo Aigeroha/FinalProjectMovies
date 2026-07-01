@@ -32,26 +32,23 @@ func SetupRoutes(app *fiber.App) {
 }
 
 func MovieRoutes(router fiber.Router) {
-    movieRepo := repository.NewMovieRepository()
-    movieService := services.NewMovieService(movieRepo)
-    movieHandler := handlers.NewMovieHandler(movieService)
+	movieRepo := repository.NewMovieRepository()
+	movieService := services.NewMovieService(movieRepo)
+	movieHandler := handlers.NewMovieHandler(movieService)
 
-    // --- ПУБЛИЧНЫЕ (доступны всем без токена и ключа) ---
-    router.Get("/movies", movieHandler.GetAllMovies)
-    router.Get("/movies/search", movieHandler.GetMoviesFilter)
-    router.Get("/movies/page", movieHandler.GetMoviesPaginated)
-    router.Get("/movies/stats", movieHandler.GetMovieStats)
-    router.Get("/movies/:id", movieHandler.GetMovieByID)
+	router.Get("/movies", movieHandler.GetAllMovies)
+	router.Get("/movies/search", movieHandler.GetMoviesFilter)
+	router.Get("/movies/page", movieHandler.GetMoviesPaginated)
+	router.Get("/movies/stats", movieHandler.GetMovieStats)
+	router.Get("/movies/:id", movieHandler.GetMovieByID)
 
-    // --- АДМИНСКИЕ (только с секретным ключом) ---
-    // Используем middleware.AdminOnly(), который мы создадим ниже
-    admin := router.Group("/movies")
-    admin.Use(middleware.AdminOnly()) 
+	admin := router.Group("/movies")
+	admin.Use(middleware.AdminOnly())
 
-    admin.Post("/", movieHandler.CreateMovie)
-    admin.Put("/:id", movieHandler.UpdateMovie)
-    admin.Patch("/:id", movieHandler.PatchMovie)
-    admin.Delete("/:id", movieHandler.DeleteMovie)
+	admin.Post("/", movieHandler.CreateMovie)
+	admin.Put("/:id", movieHandler.UpdateMovie)
+	admin.Patch("/:id", movieHandler.PatchMovie)
+	admin.Delete("/:id", movieHandler.DeleteMovie)
 }
 
 func ScheduleRoutes(router fiber.Router) {
@@ -62,10 +59,13 @@ func ScheduleRoutes(router fiber.Router) {
 	router.Get("/schedules", scheduleHandler.GetSchedules)
 	router.Get("/schedules/page", scheduleHandler.GetSchedulesPaginated)
 
-	router.Post("/schedules", scheduleHandler.CreateSchedule)
-	router.Put("/schedules/:id", scheduleHandler.UpdateSchedule)
-	router.Patch("/schedules/:id", scheduleHandler.PatchSchedule)
-	router.Delete("/schedules/:id", scheduleHandler.DeleteSchedule)
+	admin := router.Group("/schedules")
+	admin.Use(middleware.AdminOnly())
+
+	admin.Post("/", scheduleHandler.CreateSchedule)
+	admin.Put("/:id", scheduleHandler.UpdateSchedule)
+	admin.Patch("/:id", scheduleHandler.PatchSchedule)
+	admin.Delete("/:id", scheduleHandler.DeleteSchedule)
 }
 
 func TicketRoutes(router fiber.Router) {
@@ -74,11 +74,13 @@ func TicketRoutes(router fiber.Router) {
 	ticketService := services.NewTicketService(ticketRepo, scheduleRepo)
 	ticketHandler := handlers.NewTicketHandler(ticketService)
 
-	router.Get("/tickets", ticketHandler.GetTickets)
+	admin := router.Group("/tickets")
+	admin.Use(middleware.AdminOnly())
+	admin.Get("/", ticketHandler.GetTickets)
 
-	protected := router.Group("", middleware.Protected())
-	protected.Post("/tickets", ticketHandler.BuyTicket)
-	protected.Post("/tickets/refund", ticketHandler.RefundTicket)
+	protected := router.Group("/tickets", middleware.Protected())
+	protected.Post("/buy", ticketHandler.BuyTicket)
+	protected.Post("/refund", ticketHandler.RefundTicket)
 }
 
 func CustomerRoutes(router fiber.Router) {
@@ -89,10 +91,11 @@ func CustomerRoutes(router fiber.Router) {
 	router.Post("/customers/register", customerHandler.Register)
 	router.Post("/customers/login", customerHandler.Login)
 
-	protected := router.Group("/customers")
-	protected.Use(middleware.Protected())
+	admin := router.Group("/customers")
+	admin.Use(middleware.AdminOnly())
+	admin.Get("/", customerHandler.GetAllCustomers)
 
-	protected.Get("/", customerHandler.GetAllCustomers)
+	protected := router.Group("/customers", middleware.Protected())
 	protected.Get("/:id", customerHandler.GetProfile)
 	protected.Patch("/:id", customerHandler.PatchCustomer)
 	protected.Post("/:id/topup", customerHandler.TopUpWallet)
