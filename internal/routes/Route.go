@@ -91,14 +91,13 @@ func CustomerRoutes(router fiber.Router) {
 	router.Post("/customers/register", customerHandler.Register)
 	router.Post("/customers/login", customerHandler.Login)
 
+	admin := router.Group("/customers/admin")
+	admin.Use(middleware.AdminOnly())
+	admin.Get("/", customerHandler.GetAllCustomers)
 
 	protected := router.Group("/customers", middleware.Protected())
 	protected.Get("/:id", customerHandler.GetProfile)
 	protected.Patch("/:id", customerHandler.PatchCustomer)
 	protected.Post("/:id/topup", customerHandler.TopUpWallet)
 	protected.Delete("/:id", customerHandler.DeleteCustomer)
-	
-	admin := router.Group("/customers")
-	admin.Use(middleware.AdminOnly())
-	admin.Get("admin", customerHandler.GetAllCustomers)
 }

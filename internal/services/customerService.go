@@ -60,16 +60,18 @@ func (s *CustomerService) Login(ctx context.Context, input models.LoginInput) (*
 
 
 func (s *CustomerService) DeleteCustomer(ctx context.Context, id int) error {
-	rowsAffected, err := s.repo.Delete(ctx, id)
-	if err != nil {
-		return errs.ErrInternal
-	}
-	if rowsAffected == 0 {
-		return errs.New("клиент не найден", 404)
-	}
-	return nil
-}
+    rowsAffected, err := s.repo.Delete(ctx, id)
+    if err != nil {
+        println("ОШИБКА БАЗЫ ДАННЫХ ПРИ УДАЛЕНИИ:", err.Error())
+        return errs.ErrInternal
+    }
+    if rowsAffected == 0 {
+        return errs.New("клиент не найден", 404)
+    }
+    return nil
 
+
+}
 
 func (s *CustomerService) PatchCustomer(ctx context.Context, id int, input map[string]interface{}) error {
 

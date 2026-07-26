@@ -107,16 +107,6 @@ func (r *CustomerRepository) UpdateFields(ctx context.Context, id int, fields ma
 }
 
 
-func (r *CustomerRepository) Delete(ctx context.Context, id int) (int64, error) {
-	query := `DELETE FROM customers WHERE customer_id = $1`
-	res, err := r.db.ExecContext(ctx, query, id)
-	if err != nil {
-		return 0, err
-	}
-	return res.RowsAffected()
-}
-
-
 func (r *CustomerRepository) GetPaginated(ctx context.Context, limit, offset int) ([]models.CustomerProfileResponse, error) {
 	query := `
 		SELECT c.customer_id, c.nickname, c.phone, w.balance 
@@ -140,4 +130,16 @@ func (r *CustomerRepository) GetPaginated(ctx context.Context, limit, offset int
 		list = append(list, p)
 	}
 	return list, nil
+}
+
+func (r *CustomerRepository) Delete(ctx context.Context, id int) (int64, error) {
+
+    _, _ = r.db.ExecContext(ctx, "DELETE FROM customer_wallet WHERE customer_id = $1", id)
+
+    result, err := r.db.ExecContext(ctx, "DELETE FROM customers WHERE customer_id = $1", id)
+    if err != nil {
+        return 0, err
+    }
+    
+    return result.RowsAffected()
 }
