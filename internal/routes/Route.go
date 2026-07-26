@@ -98,7 +98,7 @@ func CustomerRoutes(router fiber.Router) {
 	protected.Post("/:id/topup", customerHandler.TopUpWallet)
 	protected.Delete("/:id", customerHandler.DeleteCustomer)
 	
-	admin := router.Group("/customers/admin")
+	admin := router.Group("/customers")
 	admin.Use(middleware.AdminOnly())
-	admin.Get("/", customerHandler.GetAllCustomers)
+	admin.Get("admin", customerHandler.GetAllCustomers)
 }
