@@ -57,7 +57,7 @@ func ScheduleRoutes(router fiber.Router) {
 	scheduleHandler := handlers.NewScheduleHandler(scheduleService)
 
 	router.Get("/schedules", scheduleHandler.GetSchedules)
-	router.Get("/schedules/page", scheduleHandler.GetSchedulesPaginated)
+	router.Get("/schedules/page/:page", scheduleHandler.GetSchedulesPaginated)
 
 	admin := router.Group("/schedules")
 	admin.Use(middleware.AdminOnly())
