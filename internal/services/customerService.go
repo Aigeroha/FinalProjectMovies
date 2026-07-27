@@ -2,10 +2,11 @@ package services
 
 import (
 	"context"
-	"golang.org/x/crypto/bcrypt"
 	"final-project/internal/errs"
 	"final-project/internal/models"
 	"final-project/internal/repository"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type CustomerService struct {
@@ -21,7 +22,6 @@ func (s *CustomerService) Register(ctx context.Context, input models.RegisterInp
 		return errs.New("nickname и password не могут быть пустыми", 400)
 	}
 
-	
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return errs.ErrInternal
@@ -33,7 +33,6 @@ func (s *CustomerService) Register(ctx context.Context, input models.RegisterInp
 		Phone:        input.Phone,
 	}
 
-	
 	err = s.repo.CreateWithWalletTx(ctx, customer)
 	if err != nil {
 		return err
@@ -42,34 +41,30 @@ func (s *CustomerService) Register(ctx context.Context, input models.RegisterInp
 	return nil
 }
 
-
 func (s *CustomerService) Login(ctx context.Context, input models.LoginInput) (*models.Customer, error) {
 	customer, err := s.repo.GetByNickname(ctx, input.Nickname)
 	if err != nil {
 		return nil, errs.New("неверный никнейм или пароль", 401)
 	}
 
-	
 	err = bcrypt.CompareHashAndPassword([]byte(customer.PasswordHash), []byte(input.Password))
 	if err != nil {
-		return nil, errs.New("неверный никнейм или пароль", 401)
+		return nil, errs.New("неверный никнейм или пароль, проверка пароля не прошла", 401)
 	}
 
 	return customer, nil
 }
 
-
 func (s *CustomerService) DeleteCustomer(ctx context.Context, id int) error {
-    rowsAffected, err := s.repo.Delete(ctx, id)
-    if err != nil {
-        println("ОШИБКА БАЗЫ ДАННЫХ ПРИ УДАЛЕНИИ:", err.Error())
-        return errs.ErrInternal
-    }
-    if rowsAffected == 0 {
-        return errs.New("клиент не найден", 404)
-    }
-    return nil
-
+	rowsAffected, err := s.repo.Delete(ctx, id)
+	if err != nil {
+		println("ОШИБКА БАЗЫ ДАННЫХ ПРИ УДАЛЕНИИ:", err.Error())
+		return errs.ErrInternal
+	}
+	if rowsAffected == 0 {
+		return errs.New("клиент не найден", 404)
+	}
+	return nil
 
 }
 
@@ -80,7 +75,7 @@ func (s *CustomerService) PatchCustomer(ctx context.Context, id int, input map[s
 		if err != nil {
 			return errs.ErrInternal
 		}
-		delete(input, "password") 
+		delete(input, "password")
 		input["password_hash"] = string(hashed)
 	}
 
@@ -93,7 +88,6 @@ func (s *CustomerService) PatchCustomer(ctx context.Context, id int, input map[s
 	}
 	return nil
 }
-
 
 func (s *CustomerService) TopUpWallet(ctx context.Context, customerID int, amount int) error {
 	if amount <= 0 {
@@ -110,7 +104,6 @@ func (s *CustomerService) TopUpWallet(ctx context.Context, customerID int, amoun
 	return nil
 }
 
-
 func (s *CustomerService) GetCustomerProfile(ctx context.Context, id int) (*models.CustomerProfileResponse, error) {
 	profile, err := s.repo.GetProfileByID(ctx, id)
 	if err != nil {
@@ -118,7 +111,6 @@ func (s *CustomerService) GetCustomerProfile(ctx context.Context, id int) (*mode
 	}
 	return profile, nil
 }
-
 
 func (s *CustomerService) GetAllCustomersPaginated(ctx context.Context, page int) ([]models.CustomerProfileResponse, error) {
 	limit := 20

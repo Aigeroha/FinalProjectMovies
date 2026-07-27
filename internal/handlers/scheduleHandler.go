@@ -7,11 +7,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gofiber/fiber/v3"
 	"final-project/internal/errs"
 	"final-project/internal/models"
 	"final-project/internal/responses"
 	"final-project/internal/services"
+
+	"github.com/gofiber/fiber/v3"
 )
 
 type ScheduleHandler struct {
@@ -35,7 +36,6 @@ func (h *ScheduleHandler) GetSchedules(c fiber.Ctx) error {
 	hallName := c.Query("hall")
 	movieTitle := c.Query("movie")
 
-	
 	if timeSlot != "" || hallName != "" || movieTitle != "" {
 		list, err := h.service.GetSchedulesFilter(ctx, timeSlot, hallName, movieTitle)
 		if err != nil {
@@ -44,14 +44,12 @@ func (h *ScheduleHandler) GetSchedules(c fiber.Ctx) error {
 		return responses.Success(c, 200, list)
 	}
 
-	
 	list, err := h.service.GetSchedules(ctx)
 	if err != nil {
 		return responses.Error(c, 500, "internal server error")
 	}
 	return responses.Success(c, 200, list)
 }
-
 
 func (h *ScheduleHandler) GetSchedulesPaginated(c fiber.Ctx) error {
 	start := time.Now()
@@ -62,7 +60,7 @@ func (h *ScheduleHandler) GetSchedulesPaginated(c fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	pageStr := c.Query("page")
+	pageStr := c.Params("page")
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page < 1 {
 		return responses.Error(c, 400, "invalid page parameter")
@@ -74,7 +72,6 @@ func (h *ScheduleHandler) GetSchedulesPaginated(c fiber.Ctx) error {
 	}
 	return responses.Success(c, 200, list)
 }
-
 
 func (h *ScheduleHandler) CreateSchedule(c fiber.Ctx) error {
 	start := time.Now()
@@ -95,13 +92,12 @@ func (h *ScheduleHandler) CreateSchedule(c fiber.Ctx) error {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return responses.Error(c, 408, "request timeout")
 		}
-		
+
 		return responses.Error(c, 400, err.Error())
 	}
 
 	return responses.Success(c, 201, sch)
 }
-
 
 func (h *ScheduleHandler) UpdateSchedule(c fiber.Ctx) error {
 	start := time.Now()
@@ -168,7 +164,6 @@ func (h *ScheduleHandler) PatchSchedule(c fiber.Ctx) error {
 	return responses.Success(c, 200, existing)
 }
 
-
 func (h *ScheduleHandler) DeleteSchedule(c fiber.Ctx) error {
 	start := time.Now()
 	defer func() {
@@ -192,4 +187,25 @@ func (h *ScheduleHandler) DeleteSchedule(c fiber.Ctx) error {
 	}
 
 	return responses.Success(c, 200, map[string]string{"message": "schedule deleted"})
+}
+
+func (h *ScheduleHandler) GetScheduleByID(c fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return responses.Error(c, 400, "invalid schedule id")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	sch, err := h.service.GetScheduleByID(ctx, id)
+	if err != nil {
+		println("ОШИБКА В GetScheduleByID:", err.Error()) // <-- добавь это
+		if errors.Is(err, errs.ErrScheduleNotFound) {
+			return responses.Error(c, 404, "schedule not found")
+		}
+		return responses.Error(c, 500, "internal server error")
+	}
+
+	return responses.Success(c, 200, sch)
 }

@@ -18,6 +18,6 @@ type TicketView struct {
 	SeatNumber   int     `json:"seat_number"`
 	CustomerName string  `json:"customer_name"`
 	TicketType   string  `json:"ticket_type"`
-	Price        float64 `json:"price"`
+	Price        *float64 `json:"price"`
 	Status       string  `json:"status"`
 }

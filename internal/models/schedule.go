@@ -11,21 +11,21 @@ type Schedule struct {
 	HallID       int       `json:"hall_id"`
 	SessionDate  string    `json:"session_date"`
 	SessionTime  string    `json:"session_time"`
-	AdultPrice   float64   `json:"adult_price"`
-	StudentPrice float64   `json:"student_price"`
-	ChildPrice   float64   `json:"child_price"`
+	AdultPrice   *float64  `json:"adult_price"`
+	StudentPrice *float64  `json:"student_price"`
+	ChildPrice   *float64  `json:"child_price"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 
 type ScheduleView struct {
-	ID           int     `json:"schedule_id"`
-	MovieTitle   string  `json:"movie_title"`
-	SessionDate  string  `json:"session_date"`
-	SessionTime  string  `json:"session_time"`
-	HallID       int     `json:"hall_id"`
-	AdultPrice   float64 `json:"adult_price"`
-	StudentPrice float64 `json:"student_price"`
-	ChildPrice   float64 `json:"child_price"`
+	ID           int      `json:"schedule_id"`
+	MovieTitle   string   `json:"movie_title"`
+	SessionDate  string   `json:"session_date"`
+	SessionTime  string   `json:"session_time"`
+	HallID       int      `json:"hall_id"`
+	AdultPrice   *float64 `json:"adult_price"`
+	StudentPrice *float64 `json:"student_price"`
+	ChildPrice   *float64 `json:"child_price"`
 }
 
 func (s *Schedule) UnmarshalJSON(data []byte) error {
@@ -58,7 +58,6 @@ func (s *Schedule) MarshalJSON() ([]byte, error) {
 		SessionTime: formatToDisplayTime(s.SessionTime),
 	})
 }
-
 
 func (sv *ScheduleView) MarshalJSON() ([]byte, error) {
 	type Alias ScheduleView

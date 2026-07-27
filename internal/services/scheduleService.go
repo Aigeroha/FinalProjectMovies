@@ -15,15 +15,22 @@ func NewScheduleService(r *repository.ScheduleRepository) *ScheduleService {
 	return &ScheduleService{repo: r}
 }
 
+// func (s *ScheduleService) GetSchedules(ctx context.Context) ([]models.ScheduleView, error) {
+// 	schedules, err := s.repo.GetAllDetailed(ctx)
+// 	if err != nil {
+// 		return nil, errs.ErrInternal
+// 	}
+// 	return schedules, nil
+// }
 
 func (s *ScheduleService) GetSchedules(ctx context.Context) ([]models.ScheduleView, error) {
 	schedules, err := s.repo.GetAllDetailed(ctx)
 	if err != nil {
+		println("ОШИБКА В GetAllDetailed:", err.Error()) // <-- добавь это
 		return nil, errs.ErrInternal
 	}
 	return schedules, nil
 }
-
 
 func (s *ScheduleService) GetSchedulesPaginated(ctx context.Context, page int) ([]models.ScheduleView, error) {
 	limit := 10
@@ -35,7 +42,6 @@ func (s *ScheduleService) GetSchedulesPaginated(ctx context.Context, page int) (
 	}
 	return schedules, nil
 }
-
 
 func (s *ScheduleService) GetSchedulesFilter(ctx context.Context, timeSlot, hallName, movieTitle string) ([]models.ScheduleView, error) {
 	if timeSlot != "" && len(timeSlot) == 5 {
@@ -49,9 +55,8 @@ func (s *ScheduleService) GetSchedulesFilter(ctx context.Context, timeSlot, hall
 	return schedules, nil
 }
 
-
 func (s *ScheduleService) CreateSchedule(ctx context.Context, sch *models.Schedule) error {
-	
+
 	if !s.isValidTimeSlot(sch.SessionTime) {
 		return errs.New("неверный временной слот. Доступные слоты: 12:00, 16:00, 19:30, 22:00, 23:50", 400)
 	}
@@ -66,14 +71,13 @@ func (s *ScheduleService) CreateSchedule(ctx context.Context, sch *models.Schedu
 
 	err = s.repo.Create(ctx, sch)
 	if err != nil {
+		println("ОШИБКА СОЗДАНИЯ В БАЗЕ:", err.Error())
 		return errs.ErrInternal
 	}
 	return nil
 }
 
-
 func (s *ScheduleService) UpdateSchedule(ctx context.Context, id int, sch *models.Schedule) error {
-	
 	if !s.isValidTimeSlot(sch.SessionTime) {
 		return errs.New("неверный временной слот. Доступные слоты: 12:00, 16:00, 19:30, 22:00, 23:50", 400)
 	}
@@ -88,6 +92,7 @@ func (s *ScheduleService) UpdateSchedule(ctx context.Context, id int, sch *model
 
 	rowsAffected, err := s.repo.Update(ctx, id, sch)
 	if err != nil {
+		println("ОШИБКА ПАТЧА:", err.Error())
 		return errs.ErrInternal
 	}
 	if rowsAffected == 0 {
@@ -97,7 +102,6 @@ func (s *ScheduleService) UpdateSchedule(ctx context.Context, id int, sch *model
 	return nil
 }
 
-
 func (s *ScheduleService) PatchSchedule(ctx context.Context, id int, existing *models.Schedule, input map[string]interface{}) error {
 	if val, ok := input["movie_id"].(float64); ok {
 		existing.MovieID = int(val)
@@ -106,18 +110,19 @@ func (s *ScheduleService) PatchSchedule(ctx context.Context, id int, existing *m
 		existing.HallID = int(val)
 	}
 
-	
 	if val, ok := input["adult_price"].(float64); ok {
-		existing.AdultPrice = val
+		v := val
+		existing.AdultPrice = &v
 	}
 	if val, ok := input["student_price"].(float64); ok {
-		existing.StudentPrice = val
+		v := val
+		existing.StudentPrice = &v
 	}
 	if val, ok := input["child_price"].(float64); ok {
-		existing.ChildPrice = val
+		v := val
+		existing.ChildPrice = &v
 	}
 
-	
 	if val, ok := input["session_date"].(string); ok {
 		existing.SessionDate = val
 	}
@@ -125,12 +130,15 @@ func (s *ScheduleService) PatchSchedule(ctx context.Context, id int, existing *m
 		existing.SessionTime = val
 	}
 
-	if !s.isValidTimeSlot(existing.SessionTime) {
-		return errs.New("неверный временной слот. Доступные слоты: 12:00, 16:00, 19:30, 22:00, 23:50", 400)
+	if _, ok := input["session_time"]; ok {
+		if !s.isValidTimeSlot(existing.SessionTime) {
+			return errs.New("неверный временной слот. Доступные слоты: 12:00, 16:00, 19:30, 22:00, 23:50", 400)
+		}
 	}
 
 	isBusy, err := s.repo.CheckSlotBusy(ctx, existing.SessionDate, existing.SessionTime, existing.HallID, id)
 	if err != nil {
+		println("ОШИБКА CheckSlotBusy:", err.Error())
 		return errs.ErrInternal
 	}
 	if isBusy {
@@ -139,8 +147,10 @@ func (s *ScheduleService) PatchSchedule(ctx context.Context, id int, existing *m
 
 	rowsAffected, err := s.repo.Update(ctx, id, existing)
 	if err != nil {
-		return errs.ErrInternal
-	}
+        println("ОШИБКА UPDATE В БАЗЕ:", err.Error()) 
+        return errs.ErrInternal
+    }
+
 	if rowsAffected == 0 {
 		return errs.ErrScheduleNotFound
 	}

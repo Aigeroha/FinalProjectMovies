@@ -42,11 +42,11 @@ func (s *TicketService) CreateTicket(ctx context.Context, t *models.Ticket) erro
 	var price float64
 	switch t.TicketType {
 	case "Взрослый":
-		price = sch.AdultPrice
+		price = *sch.AdultPrice
 	case "Студенческий":
-		price = sch.StudentPrice
+		price = *sch.StudentPrice
 	case "Детский":
-		price = sch.ChildPrice
+		price = *sch.ChildPrice
 	default:
 		return errs.New("неверный тип билета. Допустимы: 'Взрослый', 'Студенческий', 'Детский'", 400)
 	}
@@ -108,11 +108,11 @@ func (s *TicketService) RefundTicket(ctx context.Context, ticketID, customerID i
 	var refundAmount float64
 	switch ticket.TicketType {
 	case "Взрослый":
-		refundAmount = sch.AdultPrice
+		refundAmount = *sch.AdultPrice
 	case "Студенческий":
-		refundAmount = sch.StudentPrice
+		refundAmount = *sch.StudentPrice
 	case "Детский":
-		refundAmount = sch.ChildPrice
+		refundAmount = *sch.ChildPrice
 	}
 
 	
@@ -128,7 +128,16 @@ func (s *TicketService) RefundTicket(ctx context.Context, ticketID, customerID i
 func (s *TicketService) GetTickets(ctx context.Context, filter map[string]string) ([]models.TicketView, error) {
 	tickets, err := s.repo.GetFilteredTickets(ctx, filter)
 	if err != nil {
+		println("ОШИБКА GET TICKETS:", err.Error())
 		return nil, errs.ErrInternal
 	}
 	return tickets, nil
+}
+
+func (s *TicketService) GetTicketByID(ctx context.Context, id int) (*models.Ticket, error) {
+    ticket, err := s.repo.GetByID(ctx, id)
+    if err != nil {
+        return nil, errs.New("билет не найден", 404)
+    }
+    return ticket, nil
 }

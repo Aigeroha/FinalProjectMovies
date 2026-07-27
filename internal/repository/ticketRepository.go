@@ -104,7 +104,7 @@ func (r *TicketRepository) GetFilteredTickets(ctx context.Context, filters map[s
 	query := `
 		SELECT 
 			t.ticket_id, m.title, s.session_date, s.session_time, s.hall_id, 
-			se.seat_number, c.name, t.ticket_type, t.status,
+			se.seat_number, t.ticket_type, t.status,
 			CASE 
 				WHEN t.ticket_type = 'Взрослый' THEN s.adult_price
 				WHEN t.ticket_type = 'Студенческий' THEN s.student_price
@@ -164,7 +164,7 @@ func (r *TicketRepository) GetFilteredTickets(ctx context.Context, filters map[s
 	var list []models.TicketView
 	for rows.Next() {
 		var tv models.TicketView
-		err := rows.Scan(&tv.TicketID, &tv.MovieTitle, &tv.SessionDate, &tv.SessionTime, &tv.HallID, &tv.SeatNumber, &tv.CustomerName, &tv.TicketType, &tv.Status, &tv.Price)
+		err := rows.Scan(&tv.TicketID, &tv.MovieTitle, &tv.SessionDate, &tv.SessionTime, &tv.HallID, &tv.SeatNumber, &tv.TicketType, &tv.Status, &tv.Price)
 		if err != nil {
 			return nil, err
 		}

@@ -18,7 +18,6 @@ func NewScheduleRepository() *ScheduleRepository {
 	return &ScheduleRepository{db: database.DB}
 }
 
-
 func (r *ScheduleRepository) GetAllDetailed(ctx context.Context) ([]models.ScheduleView, error) {
 	query := `SELECT schedule_id, movie_title, session_date, session_time, hall_id, adult_price, student_price, child_price 
 	          FROM view_readable_schedules`
@@ -48,7 +47,6 @@ func (r *ScheduleRepository) GetAllDetailed(ctx context.Context) ([]models.Sched
 	}
 	return list, nil
 }
-
 
 func (r *ScheduleRepository) GetPaginated(ctx context.Context, limit, offset int) ([]models.ScheduleView, error) {
 	query := `SELECT schedule_id, movie_title, session_date, session_time, hall_id, adult_price, student_price, child_price 
@@ -81,7 +79,6 @@ func (r *ScheduleRepository) GetPaginated(ctx context.Context, limit, offset int
 	return list, nil
 }
 
-
 func (r *ScheduleRepository) GetFiltered(ctx context.Context, timeSlot, hallStr, movieTitle string) ([]models.ScheduleView, error) {
 	query := `SELECT schedule_id, movie_title, session_date, session_time, hall_id, adult_price, student_price, child_price 
 	          FROM view_readable_schedules WHERE 1=1`
@@ -94,7 +91,7 @@ func (r *ScheduleRepository) GetFiltered(ctx context.Context, timeSlot, hallStr,
 		placeholderIdx++
 	}
 	if hallStr != "" {
-		
+
 		hallID, err := strconv.Atoi(hallStr)
 		if err == nil {
 			query += " AND hall_id = $" + strconv.Itoa(placeholderIdx)
@@ -135,13 +132,11 @@ func (r *ScheduleRepository) GetFiltered(ctx context.Context, timeSlot, hallStr,
 	return list, nil
 }
 
-
 func (r *ScheduleRepository) CheckSlotBusy(ctx context.Context, date, timeSlot string, hallID, currentID int) (bool, error) {
 	query := "SELECT COUNT(*) FROM schedules WHERE session_date = $1 AND session_time = $2 AND hall_id = $3"
 	var args []interface{}
 	args = append(args, date, timeSlot, hallID)
 
-	
 	if currentID > 0 {
 		query += " AND schedule_id != $4"
 		args = append(args, currentID)
@@ -155,14 +150,12 @@ func (r *ScheduleRepository) CheckSlotBusy(ctx context.Context, date, timeSlot s
 	return count > 0, nil
 }
 
-
 func (r *ScheduleRepository) Create(ctx context.Context, s *models.Schedule) error {
 	query := `INSERT INTO schedules (movie_id, hall_id, session_date, session_time, adult_price, student_price, child_price) 
-	          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING schedule_id, created_at`
+	          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING schedule_id`
 	return r.db.QueryRowContext(ctx, query, s.MovieID, s.HallID, s.SessionDate, s.SessionTime, s.AdultPrice, s.StudentPrice, s.ChildPrice).
-		Scan(&s.ID, &s.CreatedAt)
+		Scan(&s.ID)
 }
-
 
 func (r *ScheduleRepository) Update(ctx context.Context, id int, s *models.Schedule) (int64, error) {
 	query := `UPDATE schedules 
@@ -175,7 +168,6 @@ func (r *ScheduleRepository) Update(ctx context.Context, id int, s *models.Sched
 	return result.RowsAffected()
 }
 
-
 func (r *ScheduleRepository) Delete(ctx context.Context, id int) (int64, error) {
 	result, err := r.db.ExecContext(ctx, "DELETE FROM schedules WHERE schedule_id = $1", id)
 	if err != nil {
@@ -184,10 +176,9 @@ func (r *ScheduleRepository) Delete(ctx context.Context, id int) (int64, error) 
 	return result.RowsAffected()
 }
 
-
 func (r *ScheduleRepository) GetByID(ctx context.Context, id int) (*models.Schedule, error) {
 	var s models.Schedule
-	query := `SELECT schedule_id, movie_id, hall_id, session_date, session_time, adult_price, student_price, child_price, created_at 
+	query := `SELECT schedule_id, movie_id, hall_id, session_date, session_time, adult_price, student_price, child_price 
 	          FROM schedules WHERE schedule_id = $1`
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&s.ID,
@@ -198,7 +189,6 @@ func (r *ScheduleRepository) GetByID(ctx context.Context, id int) (*models.Sched
 		&s.AdultPrice,
 		&s.StudentPrice,
 		&s.ChildPrice,
-		&s.CreatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, errs.ErrScheduleNotFound

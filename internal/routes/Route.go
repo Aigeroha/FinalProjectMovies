@@ -57,6 +57,7 @@ func ScheduleRoutes(router fiber.Router) {
 	scheduleHandler := handlers.NewScheduleHandler(scheduleService)
 
 	router.Get("/schedules", scheduleHandler.GetSchedules)
+	router.Get("/schedules/:id", scheduleHandler.GetScheduleByID)
 	router.Get("/schedules/page/:page", scheduleHandler.GetSchedulesPaginated)
 
 	admin := router.Group("/schedules")
@@ -77,10 +78,13 @@ func TicketRoutes(router fiber.Router) {
 	admin := router.Group("/tickets")
 	admin.Use(middleware.AdminOnly())
 	admin.Get("/", ticketHandler.GetTickets)
+	admin.Get("/:id", ticketHandler.GetTicketByID)
 
-	protected := router.Group("/tickets", middleware.Protected())
+	protected := router.Group("/client/tickets")
+	protected.Use(middleware.Protected())
 	protected.Post("/buy", ticketHandler.BuyTicket)
 	protected.Post("/refund", ticketHandler.RefundTicket)
+
 }
 
 func CustomerRoutes(router fiber.Router) {
